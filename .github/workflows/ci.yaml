@@ -1,0 +1,57 @@
+name: ci
+
+on:
+  workflow_dispatch:
+  # 每天 6:00 (UTC+8) 触发一次
+  schedule:
+    - cron: '0 14 * * *'
+  push:
+    branches:
+      - master
+
+jobs:
+  main:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Add token
+        uses: actions/checkout@v4
+        with:
+          repository: peiyingyao/Microsoft-Activation-Scripts
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set variables
+        run: |
+          echo "::debug"
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
+          echo "REPODIR=$PWD" >> $GITHUB_ENV
+
+      - name: Sync with upstream
+        run: |
+          git checkout master
+          git remote add upstream https://github.com/massgravel/Microsoft-Activation-Scripts.git
+          git fetch --depth=1 upstream
+          git merge upstream/master --strategy-option theirs --allow-unrelated-histories --no-edit
+
+      - name: Edit
+        run: |
+          curl -o activate.ps1 "https://raw.githubusercontent.com/massgravel/massgravel.github.io/refs/heads/main/index.html"
+          awk "{gsub(\"https://raw.githubusercontent.com/massgravel/Microsoft-Activation-Scripts/\", \"https://gitee.com/peiyingyao/Microsoft-Activation-Scripts/raw/\")} 1" activate.ps1 > activate_temp.ps1
+          if diff activate.ps1 activate_temp.ps1 >/dev/null; then
+              exit 1
+          else
+              mv activate_temp.ps1 activate.ps1
+          fi
+
+      - name: Commit and Push Changes
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add --all
+            git commit -m "Sync with upstream"
+            git push origin master
+          else
+            echo "No changes to commit"
+          fi
