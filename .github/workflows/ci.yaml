@@ -47,11 +47,27 @@ jobs:
           fi
 
       - name: Commit and Push Changes
+        id: commit_push
         run: |
           if [ -n "$(git status --porcelain)" ]; then
             git add --all
             git commit -m "Sync with upstream"
             git push origin master
+            echo "pushed=true" >> $GITHUB_ENV
           else
             echo "No changes to commit"
+            echo "pushed=false" >> $GITHUB_ENV
           fi
+
+      - name: Mirror the Github repos to Gitee
+        if: env.pushed == 'true'
+        uses: Yikun/hub-mirror-action@master
+        with:
+          src: github/peiyingyao
+          dst: gitee/peiyingyao
+          dst_key: ${{ secrets.GITEE_PRIVATE_KEY }}
+          dst_token: ${{ secrets.GITEE_TOKEN }}
+          static_list: Microsoft-Activation-Scripts
+          force_update: true
+          debug: true
+          timeout: 60
