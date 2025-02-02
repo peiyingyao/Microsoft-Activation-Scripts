@@ -61,7 +61,7 @@ jobs:
           fi
 
       - name: Mirror the GitHub repos to Gitee
-        if: env.pushed == 'true' || github.event_name == 'workflow_dispatch' || github.event_name = 'push'
+        if: env.pushed == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'push'
         uses: Yikun/hub-mirror-action@master
         with:
           src: github/peiyingyao
