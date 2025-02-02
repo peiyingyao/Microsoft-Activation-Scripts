@@ -23,7 +23,6 @@ jobs:
 
       - name: Set variables
         run: |
-          echo "::debug"
           git config --global user.name "github-actions[bot]"
           git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
           echo "BUILDTIME=$(TZ=Asia/Shanghai date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
@@ -31,6 +30,7 @@ jobs:
 
       - name: Sync with upstream
         run: |
+          echo "::debug"
           git checkout master
           git remote add upstream https://github.com/massgravel/Microsoft-Activation-Scripts.git
           git fetch --depth=1 upstream
@@ -40,11 +40,12 @@ jobs:
         run: |
           curl -o activate.ps1 "https://raw.githubusercontent.com/massgravel/massgravel.github.io/refs/heads/main/index.html"
           awk "{gsub(\"https://raw.githubusercontent.com/massgravel/Microsoft-Activation-Scripts/\", \"https://gitee.com/peiyingyao/Microsoft-Activation-Scripts/raw/\")} 1" activate.ps1 > activate_temp.ps1
-          if diff activate.ps1 activate_temp.ps1 >/dev/null; then
-              exit 1
-          else
-              mv activate_temp.ps1 activate.ps1
+          if [ ! -f activate_temp.ps1 ]; then
+              exit 0
           fi
+          diff activate.ps1 activate_temp.ps1 || true
+          mv activate_temp.ps1 activate.ps1
+          exit 0
 
       - name: Commit and Push Changes
         id: commit_push
@@ -59,8 +60,8 @@ jobs:
             echo "pushed=false" >> $GITHUB_ENV
           fi
 
-      - name: Mirror the Github repos to Gitee
-        if: env.pushed == 'true'
+      - name: Mirror the GitHub repos to Gitee
+        if: env.pushed == 'true' || github.event_name == 'workflow_dispatch' || github.event_name = 'push'
         uses: Yikun/hub-mirror-action@master
         with:
           src: github/peiyingyao
