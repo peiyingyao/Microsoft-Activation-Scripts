@@ -1,4 +1,4 @@
-@set masver=3.1
+@set masver=3.2
 @echo off
 
 
@@ -144,15 +144,15 @@ echo Upgrade to Windows Vista SP1 or SP2.
 goto done2
 )
 
-if not exist %ps% (
+if %winbuild% LSS 7600 if not exist "%SysPath%\WindowsPowerShell\v1.0\Modules" (
 %nceline%
+if not exist %ps% (
 echo PowerShell is not installed in your system.
-if %winbuild% LSS 7600 (
-echo Install PowerShell using the following URL.
+)
+echo Install PowerShell 2.0 using the following URL.
 echo:
 echo https://www.catalog.update.microsoft.com/Search.aspx?q=KB968930
 if %_unattended%==0 start https://www.catalog.update.microsoft.com/Search.aspx?q=KB968930
-)
 goto done2
 )
 
@@ -731,6 +731,7 @@ if defined fixes (
 call :dk_color %White% "Follow ALL the ABOVE blue lines.   "
 call :dk_color2 %Blue% "Press [1] to Open Support Webpage " %Gray% " Press [0] to Ignore"
 choice /C:10 /N
+if !errorlevel!==2 exit /b
 if !errorlevel!==1 (for %%# in (%fixes%) do (start %%#))
 )
 
